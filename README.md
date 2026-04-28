@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PM Agent
+
+AI-powered SaaS for Product Managers — roadmaps, specs, metrics, research, sprint planning, and stakeholder updates, all in one place.
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, TypeScript strict) |
+| Styling | Tailwind CSS v4 + custom shadcn/ui primitives |
+| Auth + DB | Supabase (email/password, Google OAuth, PostgreSQL) |
+| Server state | TanStack Query v5 |
+| Client state | Zustand |
+| AI | Anthropic Claude (`claude-sonnet-4-20250514`) |
+| Deployment | Vercel |
+
+## Project Structure
+
+```
+/app
+  /(auth)          → login, signup, forgot-password
+  /(dashboard)     → authenticated PM workflow pages
+  /api             → API route handlers
+  /auth/callback   → OAuth callback
+/components
+  /ui              → shadcn-style primitives (Button, Card, Input…)
+  /shared          → Sidebar, Header, ComingSoon, FeatureCard, QueryProvider
+/modules           → one folder per PM workflow (future implementations)
+/lib
+  /supabase        → browser, server, and middleware clients
+  /auth            → server actions for sign-in, sign-up, sign-out
+  /db              → typed database query helpers
+  /agents          → Claude tool-use agent chains (future)
+  anthropic.ts     → callClaude() and callClaudeStream() helpers
+  store.ts         → Zustand global store
+  utils.ts         → cn(), formatDate(), withRetry()…
+/hooks             → custom React hooks
+/types             → shared TypeScript types (database + app)
+/config            → app config, nav config, feature flags
+/supabase
+  /migrations      → SQL migration files
+```
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone and install
+
+```bash
+git clone https://github.com/git00385/productmanager
+cd productmanager
+npm install
+```
+
+### 2. Set up environment variables
+
+```bash
+cp .env.local.example .env.local
+# Fill in all values — see comments in the file
+```
+
+### 3. Set up Supabase
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy your project URL and keys into `.env.local`
+3. Run the migration in the Supabase SQL editor:
+   ```sql
+   -- paste contents of supabase/migrations/001_initial_schema.sql
+   ```
+4. Enable Google OAuth in Supabase Dashboard → Authentication → Providers
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 5. Deploy to Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+vercel --prod
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Add all `.env.local` keys as environment variables in the Vercel project dashboard.
 
-## Learn More
+## Feature Flags
 
-To learn more about Next.js, take a look at the following resources:
+Toggle modules on/off in [`config/features.ts`](config/features.ts). Set a flag to `false` to hide that module from the nav.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Adding a New Module
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create `/modules/your-module/` with your component logic
+2. Create `/app/(dashboard)/your-module/page.tsx`
+3. Add a nav entry in `config/nav.ts`
+4. Add a feature flag in `config/features.ts`
+5. Add the module type to the `ModuleType` union in `types/database.ts`
