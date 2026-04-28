@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { withRetry } from "./utils";
 
-const MODEL = "claude-sonnet-4-20250514" as const;
+const MODEL = "claude-sonnet-4-6" as const;
 
 /** Lazily-initialised Anthropic client (server-only). */
 function getClient(): Anthropic {
