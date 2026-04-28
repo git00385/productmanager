@@ -3,8 +3,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+const SUPABASE_NOT_CONFIGURED =
+  !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
 /** Sign up with email and password. */
 export async function signUp(formData: FormData): Promise<{ error: string | null }> {
+  if (SUPABASE_NOT_CONFIGURED) return { error: "Supabase is not configured yet. Add your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables." };
   const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -22,6 +26,7 @@ export async function signUp(formData: FormData): Promise<{ error: string | null
 
 /** Sign in with email and password. */
 export async function signIn(formData: FormData): Promise<{ error: string | null }> {
+  if (SUPABASE_NOT_CONFIGURED) return { error: "Supabase is not configured yet. Add your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables." };
   const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -34,6 +39,7 @@ export async function signIn(formData: FormData): Promise<{ error: string | null
 
 /** Sign in with Google OAuth. */
 export async function signInWithGoogle(): Promise<{ error: string | null }> {
+  if (SUPABASE_NOT_CONFIGURED) return { error: "Supabase is not configured yet. Add your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables." };
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -49,6 +55,7 @@ export async function signInWithGoogle(): Promise<{ error: string | null }> {
 
 /** Send a password reset email. */
 export async function resetPassword(formData: FormData): Promise<{ error: string | null }> {
+  if (SUPABASE_NOT_CONFIGURED) return { error: "Supabase is not configured yet. Add your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables." };
   const supabase = await createClient();
   const email = formData.get("email") as string;
 
