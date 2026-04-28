@@ -13,10 +13,12 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view their own profile" on public.profiles;
 create policy "Users can view their own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
@@ -36,6 +38,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
@@ -52,16 +55,7 @@ create table if not exists public.workspaces (
 
 alter table public.workspaces enable row level security;
 
-create policy "Workspace members can view workspace"
-  on public.workspaces for select
-  using (
-    auth.uid() = owner_id or
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = workspaces.id and user_id = auth.uid()
-    )
-  );
-
+drop policy if exists "Owners can manage workspace" on public.workspaces;
 create policy "Owners can manage workspace"
   on public.workspaces for all
   using (auth.uid() = owner_id);
@@ -77,6 +71,7 @@ create table if not exists public.workspace_members (
 
 alter table public.workspace_members enable row level security;
 
+drop policy if exists "Members can view workspace membership" on public.workspace_members;
 create policy "Members can view workspace membership"
   on public.workspace_members for select
   using (
@@ -84,6 +79,18 @@ create policy "Members can view workspace membership"
     exists (
       select 1 from public.workspaces
       where id = workspace_members.workspace_id and owner_id = auth.uid()
+    )
+  );
+
+-- Now that workspace_members exists, add the member-visibility policy on workspaces
+drop policy if exists "Workspace members can view workspace" on public.workspaces;
+create policy "Workspace members can view workspace"
+  on public.workspaces for select
+  using (
+    auth.uid() = owner_id or
+    exists (
+      select 1 from public.workspace_members
+      where workspace_id = workspaces.id and user_id = auth.uid()
     )
   );
 
@@ -99,6 +106,7 @@ create table if not exists public.integrations (
 
 alter table public.integrations enable row level security;
 
+drop policy if exists "Workspace members can view integrations" on public.integrations;
 create policy "Workspace members can view integrations"
   on public.integrations for select
   using (
@@ -127,6 +135,7 @@ create table if not exists public.documents (
 
 alter table public.documents enable row level security;
 
+drop policy if exists "Workspace members can view documents" on public.documents;
 create policy "Workspace members can view documents"
   on public.documents for select
   using (
@@ -140,6 +149,7 @@ create policy "Workspace members can view documents"
     )
   );
 
+drop policy if exists "Workspace members can create documents" on public.documents;
 create policy "Workspace members can create documents"
   on public.documents for insert
   with check (
@@ -164,6 +174,7 @@ begin
 end;
 $$;
 
+drop trigger if exists documents_updated_at on public.documents;
 create trigger documents_updated_at
   before update on public.documents
   for each row execute procedure public.set_updated_at();
@@ -182,6 +193,7 @@ create table if not exists public.agent_runs (
 
 alter table public.agent_runs enable row level security;
 
+drop policy if exists "Workspace members can view agent runs" on public.agent_runs;
 create policy "Workspace members can view agent runs"
   on public.agent_runs for select
   using (
