@@ -67,6 +67,23 @@ export async function resetPassword(formData: FormData): Promise<{ error: string
   return { error: null };
 }
 
+/** Resend the email confirmation link to an unverified address. */
+export async function resendConfirmation(email: string): Promise<{ error: string | null }> {
+  if (SUPABASE_NOT_CONFIGURED) return { error: "Supabase is not configured." };
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    },
+  });
+
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
 /** Sign out and redirect to login. */
 export async function signOut(): Promise<void> {
   const supabase = await createClient();

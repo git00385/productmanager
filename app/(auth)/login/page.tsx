@@ -2,24 +2,53 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn, signInWithGoogle } from "@/lib/auth/actions";
+import { MailCheck } from "lucide-react";
+import { signIn, signInWithGoogle, resendConfirmation } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+const UNVERIFIED_ERRORS = ["email not confirmed", "email link is invalid or has expired"];
+
 /** Email/password + Google OAuth login page. */
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [showResend, setShowResend] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setShowResend(false);
+    setResendSent(false);
     setLoading(true);
     const result = await signIn(new FormData(e.currentTarget));
-    if (result?.error) setError(result.error);
+    if (result?.error) {
+      setError(result.error);
+      const isUnverified = UNVERIFIED_ERRORS.some((msg) =>
+        result.error!.toLowerCase().includes(msg)
+      );
+      if (isUnverified) setShowResend(true);
+    }
     setLoading(false);
+  }
+
+  async function handleResend() {
+    if (!email) return;
+    setResending(true);
+    const result = await resendConfirmation(email);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setResendSent(true);
+      setShowResend(false);
+      setError(null);
+    }
+    setResending(false);
   }
 
   async function handleGoogle() {
@@ -57,7 +86,15 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="you@company.com" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@company.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
@@ -70,6 +107,34 @@ export default function LoginPage() {
           </div>
 
           {error && <p className="text-xs text-destructive">{error}</p>}
+
+          {/* Resend confirmation banner */}
+          {showResend && (
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5 space-y-2">
+              <p className="text-xs text-yellow-400 font-medium">Your email isn't verified yet.</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
+                onClick={handleResend}
+                disabled={resending || !email}
+              >
+                <MailCheck className="h-3.5 w-3.5 mr-2" />
+                {resending ? "Sending…" : "Resend confirmation email"}
+              </Button>
+            </div>
+          )}
+
+          {/* Success state */}
+          {resendSent && (
+            <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2.5">
+              <p className="text-xs text-green-400 font-medium flex items-center gap-1.5">
+                <MailCheck className="h-3.5 w-3.5" />
+                Confirmation email sent — check your inbox.
+              </p>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
