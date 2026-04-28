@@ -3,6 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Refreshes the session cookie on every request and enforces auth on protected routes. */
 export async function updateSession(request: NextRequest) {
+  // Skip auth checks if Supabase is not yet configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
